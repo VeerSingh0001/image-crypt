@@ -3,6 +3,7 @@ from tkinter import ttk
 import tkinter.messagebox
 import tkinter.filedialog
 import os
+import threading
 from main import (
     encrypt_img,
     decrypt_img,
@@ -44,12 +45,12 @@ class MainGUI(ttk.Frame):
     def encrypt(self):
         # [ACTION] Set mode to "encrypt" and initiate image selection.
         self.type = "encrypt"
-        self.get_image_selection()
+        self.multiple_files()
 
     def decrypt(self):
         # [ACTION] Set mode to "decrypt" and initiate image selection.
         self.type = "decrypt"
-        self.get_image_selection()
+        self.multiple_files()
 
     def get_image_selection(self):
         # [PROMPT] Update UI to ask how many images for the current method.
@@ -90,7 +91,7 @@ class MainGUI(ttk.Frame):
         self.encrypt_button.destroy()
         self.decrypt_button.destroy()
         self.label2.config(
-            text=f"Select multiple image files to {self.type.capitalize()}:"
+            text=f"Select image file/files to {self.type.capitalize()}:"
         )
         self.label2.pack(expand=False, fill=tk.X, pady=10)
 
@@ -104,7 +105,7 @@ class MainGUI(ttk.Frame):
         self.passphrase_entry.focus()
 
         self.get_folder = ttk.Button(
-            self, text="Select Folder", command=self.select_folder
+            self, text="Select file(s)", command=self.select_folder
         )
         self.get_folder.pack(pady=10)
 
@@ -142,39 +143,54 @@ class MainGUI(ttk.Frame):
                 tk.messagebox.showerror("Error", "No file selected.")
 
     def select_folder(self):
-        # [FILE] Open folder dialog and process multiple files based on mode.
+        # [FILE] Open file dialog to select multiple files and process them based on mode.
         phrase = self.get_passphrase()
         if not phrase:
             tk.messagebox.showerror("Error", "Please enter a passphrase.")
             return
 
-        files_folder = tk.filedialog.askdirectory(title=f"Select Folder to {self.type.capitalize()} Files")
-        image_files = []
-        if files_folder:
-            if self.type == "encrypt":
-                for file in os.listdir(files_folder):
-                    if file.lower().endswith((".jpg", ".jpeg", ".png")):
-                        image_files.append(os.path.join(files_folder, file))
-                enc = encrypt_multiple_files(image_files, self.get_passphrase())
-                if enc:
-                    tk.messagebox.showinfo("Success", f"Files encrypted successfully")
-                    self.home_screen()
-                else:   
-                    tk.messagebox.showerror("Error", "Encryption failed. Please try again.")
+        file_paths = tk.filedialog.askopenfilenames(
+            title=f"Select Files to {self.type.capitalize()}",
+            filetypes=[("Image files", "*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.tiff;*.webp;*.svg;*.ico;*.raw;*.jfif;*.heif;*.psd;*.xcf;*.icns;*.dds;*.exr") if self.type == "encrypt" else ("Encrypted files", "*.des")]
+        )
+        image_files = len(file_paths)
+        if image_files:
+            self.show_progress(f"Processing selected files, please wait...")
 
-            elif self.type == "decrypt":
-                for file in os.listdir(files_folder):
-                    if file.lower().endswith(".des"):
-                        image_files.append(os.path.join(files_folder, file))
-                dec = decrypt_multiple_files(image_files, self.get_passphrase())
-                if dec:
-                    tk.messagebox.showinfo("Success", f"Files decrypted successfully") 
-                    self.home_screen()
-                else:
-                    tk.messagebox.showerror("Error", "Decryption failed. Please try again.")
-                
+            def process():
+                if self.type == "encrypt":
+                    enc = encrypt_multiple_files(file_paths, self.get_passphrase())
+                    self.hide_progress()
+                    if enc:
+                        tk.messagebox.showinfo("Success", f"Files encrypted successfully")
+                        self.home_screen()
+                    else:
+                        tk.messagebox.showerror("Error", "Encryption failed. Please try again.")
+
+                elif self.type == "decrypt":
+                    dec = decrypt_multiple_files(file_paths, self.get_passphrase())
+                    self.hide_progress()
+                    if dec:
+                        tk.messagebox.showinfo("Success", f"Files decrypted successfully")
+                        self.home_screen()
+                    else:
+                        tk.messagebox.showerror("Error", "Decryption failed. Please try again.")
+
+            threading.Thread(target=process).start()
         else:
-            tk.messagebox.showerror("Error", "No folder selected.")
+            tk.messagebox.showerror("Error", "No files selected.")
+
+    def show_progress(self, current, total):
+        # [UI] Display progress by showing the current file being processed out of the total.
+        progress_message = f"Processing file {current} of {total}..."
+        self.progress_label = ttk.Label(self, text=progress_message, anchor="center", font=("Helvetica", 10))
+        self.progress_label.pack(expand=False, fill=tk.X, pady=5)
+        self.update_idletasks()
+
+    def hide_progress(self):
+        # [UI] Remove the progress message from the UI.
+        if hasattr(self, 'progress_label'):
+            self.progress_label.destroy()
 
     def encrypt_img(
         self,
@@ -182,19 +198,24 @@ class MainGUI(ttk.Frame):
         passphrase,
     ):
         # [PROCESS] Encrypt the image file and update the UI on success/failure.
-        print(f"Encrypting {img_path} with passphrase: {passphrase}")
-        enc = encrypt_img(img_path, passphrase)  
+        self.show_progress("Encrypting file, please wait...")
 
-        if enc == 0:
-            return
+        def process():
+            enc = encrypt_img(img_path, passphrase)
+            self.hide_progress()
 
-        if enc:
-            tk.messagebox.showinfo("Success", f"File encrypted successfully")
+            if enc == 0:
+                return
 
-            self.home_screen()
+            if enc:
+                tk.messagebox.showinfo("Success", f"File encrypted successfully")
 
-        else:
-            tk.messagebox.showerror("Error", "Encryption failed. Please try again.")
+                self.home_screen()
+
+            else:
+                tk.messagebox.showerror("Error", "Encryption failed. Please try again.")
+
+        threading.Thread(target=process).start()
 
     def decrypt_img(
         self,
@@ -202,17 +223,22 @@ class MainGUI(ttk.Frame):
         passphrase,
     ):
         # [PROCESS] Decrypt the encrypted file and update the UI on success/failure.
-        print(f"Decrypting {img_path} with passphrase: {passphrase}")
-        dec = decrypt_img(img_path, passphrase)  # Call the function from main.py
+        self.show_progress("Decrypting file, please wait...")
 
-        if dec:
-            tk.messagebox.showinfo("Success", f"File decrypted successfully")
+        def process():
+            dec = decrypt_img(img_path, passphrase)
+            self.hide_progress()
 
-            self.home_screen()
-        elif dec == 0:
-            tk.messagebox.showerror(f"Error", "Incorrect Passphrase for {img_path}")
-        else:
-            tk.messagebox.showerror("Error", "Decryption failed. Please try again.")
+            if dec:
+                tk.messagebox.showinfo("Success", f"File decrypted successfully")
+
+                self.home_screen()
+            elif dec == 0:
+                tk.messagebox.showerror(f"Error", "Incorrect Passphrase for {img_path}")
+            else:
+                tk.messagebox.showerror("Error", "Decryption failed. Please try again.")
+
+        threading.Thread(target=process).start()
 
     def home_screen(self):
         # [RESET] Restore the initial home screen UI.
