@@ -13,6 +13,7 @@ from main import (
 
 class MainGUI(ttk.Frame):
     def __init__(self, parent):
+        # [INIT] Initialize GUI frame, configure layout and variables.
         super().__init__(parent, padding="20")
         self.pack(fill=tk.BOTH, expand=True)
 
@@ -21,7 +22,7 @@ class MainGUI(ttk.Frame):
         self.image_path = ""
         self.encrypted_image_path = ""
         self.passphrase = ""
-        # Create a centered label
+
         self.label = ttk.Label(
             self, text="Image Cryptography", anchor="center", font=("Helvetica", 18)
         )
@@ -31,10 +32,9 @@ class MainGUI(ttk.Frame):
             self, text="Choose an option:", anchor="center", font=("Helvetica", 12)
         )
         self.label2.pack(expand=False, fill=tk.X, pady=10)
-        # More widgets (buttons, entries, etc) can be added below
-        # For example, an encrypt button:
+        
 
-        # Add the encrypt and decrypt buttons after the entry
+
         self.encrypt_button = ttk.Button(self, text="Encrypt", command=self.encrypt)
         self.encrypt_button.pack(pady=10)
 
@@ -42,16 +42,17 @@ class MainGUI(ttk.Frame):
         self.decrypt_button.pack(pady=10)
 
     def encrypt(self):
-        # Call your encryption logic here
+        # [ACTION] Set mode to "encrypt" and initiate image selection.
         self.type = "encrypt"
-        type = self.get_image_selection()
+        self.get_image_selection()
 
     def decrypt(self):
-        # Call your decryption logic here
+        # [ACTION] Set mode to "decrypt" and initiate image selection.
         self.type = "decrypt"
-        type = self.get_image_selection()
+        self.get_image_selection()
 
     def get_image_selection(self):
+        # [PROMPT] Update UI to ask how many images for the current method.
         self.label2.config(
             text=f"How many images do you want to {self.type.capitalize()}?"
         )
@@ -62,6 +63,7 @@ class MainGUI(ttk.Frame):
         self.decrypt_button.pack(pady=10)
 
     def single_file(self):
+        # [UI] Prepare interface for single file selection and passphrase entry.
         self.encrypt_button.destroy()
         self.decrypt_button.destroy()
         self.label2.config(
@@ -69,7 +71,6 @@ class MainGUI(ttk.Frame):
         )
         self.label2.pack(expand=False, fill=tk.X, pady=10)
 
-        # Add passphrase entry
         self.passphrase_label = ttk.Label(
             self, text="Enter Passphrase:", anchor="center", font=("Helvetica", 10)
         )
@@ -77,14 +78,15 @@ class MainGUI(ttk.Frame):
 
         self.passphrase_entry = ttk.Entry(
             self, show="*"
-        )  # show="*" makes it display asterisks for security
+        ) 
         self.passphrase_entry.pack(expand=False, fill=tk.X, pady=5)
-        self.passphrase_entry.focus()  # Set focus to the passphrase entry field
+        self.passphrase_entry.focus()  
 
         self.get_file = ttk.Button(self, text="Select File", command=self.select_file)
         self.get_file.pack(pady=10)
 
     def multiple_files(self):
+        # [UI] Prepare interface for multiple files selection and passphrase entry.
         self.encrypt_button.destroy()
         self.decrypt_button.destroy()
         self.label2.config(
@@ -92,7 +94,6 @@ class MainGUI(ttk.Frame):
         )
         self.label2.pack(expand=False, fill=tk.X, pady=10)
 
-        # Add passphrase entry
         self.passphrase_label = ttk.Label(
             self, text="Enter Passphrase:", anchor="center", font=("Helvetica", 10)
         )
@@ -108,16 +109,16 @@ class MainGUI(ttk.Frame):
         self.get_folder.pack(pady=10)
 
     def get_passphrase(self):
+        # [UTIL] Retrieve the passphrase from the entry widget.
         return self.passphrase_entry.get()
 
     def select_file(self):
-        # Open a file dialog to select an image file
+        # [FILE] Open file dialog and process single file based on mode.
         phrase = self.get_passphrase()
         if not phrase:
             tk.messagebox.showerror("Error", "Please enter a passphrase.")
             return
 
-        # Encrypt or decrypt the selected file based on the types
         if self.type == "encrypt":
             file_path = tk.filedialog.askopenfilename(
                 filetypes=[("Image files", "*.jpg;*.jpeg;*.png")]
@@ -141,7 +142,7 @@ class MainGUI(ttk.Frame):
                 tk.messagebox.showerror("Error", "No file selected.")
 
     def select_folder(self):
-
+        # [FILE] Open folder dialog and process multiple files based on mode.
         phrase = self.get_passphrase()
         if not phrase:
             tk.messagebox.showerror("Error", "Please enter a passphrase.")
@@ -150,7 +151,6 @@ class MainGUI(ttk.Frame):
         files_folder = tk.filedialog.askdirectory(title=f"Select Folder to {self.type.capitalize()} Files")
         image_files = []
         if files_folder:
-            # Get all valid image files based on the operation type.
             if self.type == "encrypt":
                 for file in os.listdir(files_folder):
                     if file.lower().endswith((".jpg", ".jpeg", ".png")):
@@ -181,12 +181,11 @@ class MainGUI(ttk.Frame):
         img_path,
         passphrase,
     ):
-        # Encryption logic here
+        # [PROCESS] Encrypt the image file and update the UI on success/failure.
         print(f"Encrypting {img_path} with passphrase: {passphrase}")
-        # Add your encryption code here
-        enc = encrypt_img(img_path, passphrase)  # Call the function from main.py
+        enc = encrypt_img(img_path, passphrase)  
 
-        if end == 0:
+        if enc == 0:
             return
 
         if enc:
@@ -202,9 +201,8 @@ class MainGUI(ttk.Frame):
         img_path,
         passphrase,
     ):
-        # Decryption logic here
+        # [PROCESS] Decrypt the encrypted file and update the UI on success/failure.
         print(f"Decrypting {img_path} with passphrase: {passphrase}")
-        # Add your decryption code here
         dec = decrypt_img(img_path, passphrase)  # Call the function from main.py
 
         if dec:
@@ -217,6 +215,7 @@ class MainGUI(ttk.Frame):
             tk.messagebox.showerror("Error", "Decryption failed. Please try again.")
 
     def home_screen(self):
+        # [RESET] Restore the initial home screen UI.
         self.label2.config(text="Choose an option:")
         self.label2.pack(expand=False, fill=tk.X, pady=10)
         self.encrypt_button = ttk.Button(self, text="Encrypt", command=self.encrypt)
