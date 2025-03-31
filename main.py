@@ -5,6 +5,7 @@ from Crypto.Protocol.KDF import PBKDF2
 import os
 import glob
 
+
 def encrypt_img(i_path, phrase):
     # [FUNCTION] Encrypt an image file using DES3.
     try:
@@ -28,6 +29,7 @@ def encrypt_img(i_path, phrase):
     except Exception as e:
         print(f"An error occurred during encryption: {e}")
         return 0
+
 
 def decrypt_img(enc_img_path, phrase):
     # [FUNCTION] Decrypt an encrypted image file using DES3.
@@ -58,25 +60,29 @@ def decrypt_img(enc_img_path, phrase):
         return 0
     except Exception as e:
         print(f"An error occurred during decryption: {e}")
-        return -1 
+        return -1
+
 
 def encrypt_multiple_files(file_paths, passphrase):
+    global current_file_no
     # [BATCH] Loop through files to encrypt each image.
-    try:
-        for file_path in file_paths:
-            encrypt_img(file_path, passphrase)
-        return 1
-    except Exception as e:
-        print("main file")
-        print(f"An error occurred during encryption: {e}")
-        return 0
+
+    enc = 0
+    for file_path in file_paths:
+        enc = encrypt_img(file_path, passphrase)
+        current_file_no += 1
+    return enc
+
 
 def decrypt_multiple_files(encrypted_files, passphrase):
+    global current_file_no
     # [BATCH] Loop through files to decrypt each image.
-    try:
-        for enc_file in encrypted_files:
-            decrypt_img(enc_file, passphrase)
-        return 1
-    except Exception as e:
-        print(f"An error occurred during decryption: {e}")
-        return 0
+
+    dec = 0
+    for enc_file in encrypted_files:
+        dec = decrypt_img(enc_file, passphrase)
+        current_file_no += 1
+    return dec
+
+
+current_file_no = 1
