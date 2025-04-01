@@ -51,7 +51,7 @@ class MainGUI(ttk.Frame):
         self.encrypt_button.destroy()
         self.decrypt_button.destroy()
         self.label2.config(
-            text=f"Select image file/files to {self.type.capitalize()}:")
+            text=f"Select image file(s) to {self.type.capitalize()}:")
         self.label2.pack(expand=False, fill=tk.X, pady=10)
 
         self.passphrase_label = ttk.Label(
