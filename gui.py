@@ -3,7 +3,6 @@ from tkinter import ttk
 import tkinter.messagebox
 import tkinter.filedialog
 import os
-import threading
 from main import (encrypt_multiple_files, decrypt_multiple_files)
 
 
@@ -73,35 +72,6 @@ class MainGUI(ttk.Frame):
         # [UTIL] Retrieve the passphrase from the entry widget.
         return self.passphrase_entry.get()
 
-    def select_file(self):
-        # [FILE] Open file dialog and process single file based on mode.
-        phrase = self.get_passphrase()
-        if not phrase:
-            tk.messagebox.showerror("Error", "Please enter a passphrase.")
-            return
-
-        if self.type == "encrypt":
-            file_path = tk.filedialog.askopenfilename(
-                filetypes=[("Image files", "*.jpg;*.jpeg;*.png")]
-            )
-
-            if file_path:
-                self.image_path = file_path
-                self.encrypt_img(self.image_path, self.get_passphrase())
-
-            else:
-                tk.messagebox.showerror("Error", "No file selected.")
-
-        elif self.type == "decrypt":
-            file_path = tk.filedialog.askopenfilename(
-                filetypes=[("Encrypted files", "*.des")]
-            )
-            if file_path:
-                self.image_path = file_path
-                self.decrypt_img(self.image_path, self.get_passphrase())
-            else:
-                tk.messagebox.showerror("Error", "No file selected.")
-
     def select_folder(self):
         # [FILE] Open file dialog to select multiple files and process them based on mode.
         phrase = self.get_passphrase()
@@ -155,8 +125,6 @@ class MainGUI(ttk.Frame):
                     tk.messagebox.showerror(
                         "Error", "Decryption failed. Please try again."
                     )
-
-            # threading.Thread(target=process).start()
         else:
             tk.messagebox.showerror("Error", "No files selected.")
 
